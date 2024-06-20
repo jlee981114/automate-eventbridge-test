@@ -1,7 +1,7 @@
 import boto3
 
 def create_sagemaker_endpoint():
-    sagemaker_client = boto3.client('sagemaker', region_name='us-west-2')
+    sagemaker_client = boto3.client('sagemaker', region_name='us-east-1')
 
     # Define endpoint configuration
     response = sagemaker_client.create_endpoint_config(
