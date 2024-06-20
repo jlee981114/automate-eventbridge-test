@@ -53,13 +53,13 @@ Resources:
         detail-type:
           - "SageMaker Endpoint Invocation"
       Targets:
-        - Arn: !GetAtt SageMakerEndpoint.Arn
+        - Arn: !Sub "arn:aws:sagemaker:${AWS::Region}:${AWS::AccountId}:endpoint/Justin-test-MyEndpoint"
           Id: "Justin-test-SageMakerEndpointTarget"
 
   LambdaInvokePermission:
     Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !GetAtt SageMakerEndpoint.Arn
+      FunctionName: !Sub "arn:aws:sagemaker:${AWS::Region}:${AWS::AccountId}:endpoint/Justin-test-MyEndpoint"
       Action: "lambda:InvokeFunction"
       Principal: "events.amazonaws.com"
       SourceArn: !GetAtt EventBridgeRule.Arn
