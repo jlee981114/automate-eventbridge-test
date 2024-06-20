@@ -22,12 +22,12 @@ jobs:
 
     - name: Deploy CloudFormation stack
       run: |
-        aws cloudformation deploy --template-file template.yaml --stack-name SageMakerInferenceStack --capabilities CAPABILITY_IAM
+        aws cloudformation deploy --template-file template.yaml --stack-name Justin-test-SageMakerInferenceStack --capabilities CAPABILITY_IAM
 
     - name: Enable EventBridge rule
       run: |
-        aws events enable-rule --name SageMakerInferenceRule
+        aws events enable-rule --name Justin-test-SageMakerInferenceRule
 
     - name: Check EventBridge Rule Status
       run: |
-        aws events describe-rule --name SageMakerInferenceRule
+        aws events describe-rule --name Justin-test-SageMakerInferenceRule

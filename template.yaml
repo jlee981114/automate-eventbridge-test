@@ -1,0 +1,65 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Resources:
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties: 
+      RoleName: Justin-test-LambdaExecutionRole
+      AssumeRolePolicyDocument: 
+        Version: '2012-10-17'
+        Statement: 
+          - Effect: Allow
+            Principal: 
+              Service: 
+                - lambda.amazonaws.com
+            Action: 
+              - sts:AssumeRole
+      Policies: 
+        - PolicyName: LambdaExecute
+          PolicyDocument: 
+            Version: '2012-10-17'
+            Statement: 
+              - Effect: Allow
+                Action: 
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
+
+  SageMakerEndpointConfig:
+    Type: AWS::SageMaker::EndpointConfig
+    Properties:
+      EndpointConfigName: Justin-test-MyEndpointConfig
+      ProductionVariants:
+        - VariantName: AllTrafficVariant
+          ModelName: MyModel
+          InstanceType: ml.m5.large
+          InitialInstanceCount: 1
+          InitialVariantWeight: 1.0
+
+  SageMakerEndpoint:
+    Type: AWS::SageMaker::Endpoint
+    Properties:
+      EndpointName: Justin-test-MyEndpoint
+      EndpointConfigName: !Ref SageMakerEndpointConfig
+
+  EventBridgeRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: Justin-test-SageMakerInferenceRule
+      EventPattern:
+        source:
+          - "aws.sagemaker"
+        detail-type:
+          - "SageMaker Endpoint Invocation"
+      Targets:
+        - Arn: !GetAtt SageMakerEndpoint.Arn
+          Id: "Justin-test-SageMakerEndpointTarget"
+
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt SageMakerEndpoint.Arn
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt EventBridgeRule.Arn
