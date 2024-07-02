@@ -20,19 +20,25 @@ def lambda_handler(event, context):
         }
     }
 
-    # Create the EventBridge rule
-    response = client.put_rule(
-        Name=rule_name,
-        EventPattern=json.dumps(event_pattern),
-        State='ENABLED',
-        Description='Rule triggered by CodePipeline state change'
-    )
+    try:
+        # Create the EventBridge rule
+        response = client.put_rule(
+            Name=rule_name,
+            EventPattern=json.dumps(event_pattern),
+            State='ENABLED',
+            Description='Rule triggered by CodePipeline state change'
+        )
 
-    # Save the rule name to S3
-    s3_client.put_object(
-        Bucket=bucket_name,
-        Key=rule_file,
-        Body=json.dumps({"rule_name": rule_name})
-    )
+        # Save the rule name to S3
+        s3_client.put_object(
+            Bucket=bucket_name,
+            Key=rule_file,
+            Body=json.dumps({"rule_name": rule_name})
+        )
+
+        print(f"Rule {rule_name} created and saved to S3.")
+
+    except Exception as e:
+        print(f"Error creating rule or saving to S3: {e}")
 
     return response
