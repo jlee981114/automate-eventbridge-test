@@ -1,4 +1,4 @@
-name: Deploy SageMaker Endpoint and EventBridge
+name: Deploy Lambda and EventBridge
 
 on:
   push:
@@ -6,41 +6,45 @@ on:
       - main
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Set up AWS CLI
-      uses: aws-actions/configure-aws-credentials@v1
+    - name: Set up Python
+      uses: actions/setup-python@v2
       with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
+        python-version: '3.8'
 
-    - name: Delete existing stack if in ROLLBACK_COMPLETE state
+    - name: Install dependencies
       run: |
-        STACK_STATUS=$(aws cloudformation describe-stacks --stack-name Justin-test-SageMakerInferenceStack --query "Stacks[0].StackStatus" --output text || echo "NO_STACK")
-        if [ "$STACK_STATUS" = "ROLLBACK_COMPLETE" ]; then
-          aws cloudformation delete-stack --stack-name Justin-test-SageMakerInferenceStack
-          echo "Deleted stack in ROLLBACK_COMPLETE state."
-          aws cloudformation wait stack-delete-complete --stack-name Justin-test-SageMakerInferenceStack
-        elif [ "$STACK_STATUS" = "NO_STACK" ]; then
-          echo "No existing stack found."
-        else
-          echo "Stack exists but not in ROLLBACK_COMPLETE state: $STACK_STATUS"
-        fi
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        zip -r lambda_function.zip lambda_functions/lambda_function.py
+        zip -r disable_rule.zip lambda_functions/disable_rule.py
+
+    - name: Upload Lambda function to S3
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_REGION: us-east-1
+      run: |
+        aws s3 cp lambda_function.zip s3://justin-lambda-functions-bucket/
+        aws s3 cp disable_rule.zip s3://justin-lambda-functions-bucket/
 
     - name: Deploy CloudFormation stack
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_REGION: us-east-1
       run: |
-        aws cloudformation deploy --template-file template.yaml --stack-name Justin-test-SageMakerInferenceStack --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
-
-    - name: Enable EventBridge rule
-      run: |
-        aws events enable-rule --name Justin-test-SageMakerInferenceRule
-
-    - name: Check EventBridge Rule Status
-      run: |
-        aws events describe-rule --name Justin-test-SageMakerInferenceRule
+        aws cloudformation deploy \
+          --template-file cloudformation_template.yaml \
+          --stack-name eventbridge-lambda-stack \
+          --capabilities CAPABILITY_NAMED_IAM \
+          --parameter-overrides \
+            LambdaS3Bucket=justin-lambda-functions-bucket \
+            LambdaFunctionZip=lambda_function.zip \
+            DisableRuleFunctionZip=disable_rule.zip
