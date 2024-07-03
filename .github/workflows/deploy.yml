@@ -28,6 +28,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip  # Upgrade pip
         pip install -r requirements.txt  # Install required Python packages from requirements.txt
+        pip install jupyter  # Install Jupyter to run the notebook
 
     # Step 4: Create deployment package for CreateEventLambdaFunction
     - name: Create deployment package for CreateEventLambdaFunction
@@ -76,4 +77,4 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}  # Use AWS Secret Access Key stored in GitHub Secrets
         AWS_REGION: us-east-1  # Specify the AWS region
       run: |
-        python run_notebook.py  # Execute the run_notebook.py script to run the Jupyter notebook and upload the results to S3
+        jupyter nbconvert --to notebook --execute notebooks/test_notebook.ipynb --output executed_notebook.ipynb  # Execute the Jupyter notebook and save the results
