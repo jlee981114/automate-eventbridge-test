@@ -22,23 +22,31 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        zip -r lambda_function.zip lambda_functions/lambda_function.py
-        zip -r disable_rule.zip lambda_functions/disable_rule.py
 
-    - name: Upload Lambda function to S3
+    - name: Create deployment package for CreateEventLambdaFunction
+      run: |
+        cd lambda_functions
+        zip -r ../lambda_function.zip lambda_function.py
+
+    - name: Create deployment package for DisableOldRuleLambdaFunction
+      run: |
+        cd lambda_functions
+        zip -r ../disable_rule.zip disable_rule.py
+
+    - name: Upload Lambda functions to S3
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_REGION: us-east-1
+        AWS_REGION: us-east-1  # Set your AWS region here
       run: |
-        aws s3 cp lambda_function.zip s3://justin-lambda-functions-bucket/
-        aws s3 cp disable_rule.zip s3://justin-lambda-functions-bucket/
+        aws s3 cp lambda_function.zip s3://justin-lambda-functions-bucket/lambda_function.zip
+        aws s3 cp disable_rule.zip s3://justin-lambda-functions-bucket/disable_rule.zip
 
     - name: Deploy CloudFormation stack
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_REGION: us-east-1
+        AWS_REGION: us-east-1  # Set your AWS region here
       run: |
         aws cloudformation deploy \
           --template-file cloudformation_template.yaml \
