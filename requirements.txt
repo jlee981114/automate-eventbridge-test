@@ -1,2 +1,6 @@
 boto3
 joblib
+pandas
+jupyter
+nbconvert
+nbformat
