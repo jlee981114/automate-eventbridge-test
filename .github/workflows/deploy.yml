@@ -70,11 +70,4 @@ jobs:
             LambdaFunctionZip=lambda_function.zip \
             DisableRuleFunctionZip=disable_rule.zip
 
-    # Step 8: Run Notebook and Upload Inference Results
-    - name: Run Notebook and Upload Inference Results
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}  # Use AWS Access Key ID stored in GitHub Secrets
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}  # Use AWS Secret Access Key stored in GitHub Secrets
-        AWS_REGION: us-east-1  # Specify the AWS region
-      run: |
-        jupyter nbconvert --to notebook --execute notebooks/test_notebook.ipynb --output executed_notebook.ipynb  # Execute the Jupyter notebook and save the results
+
